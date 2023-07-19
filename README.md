@@ -5,7 +5,7 @@ This is the repository of the INTERSPEECH 2023 paper [FlexiAST: Flexibility is W
 The full code will be cleaned up and released soon.
 
 
-If you have some interesting parts, please feel free to contact us or leave a comment on issues. 
+If you have some parts interested, please feel free to contact us or leave a comment on issues. 
 We will try our best to release some parts most interest you in advance.
 
 
