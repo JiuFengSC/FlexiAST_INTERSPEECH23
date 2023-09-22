@@ -11,12 +11,6 @@
 
 ############################################################################################################
 
-# NOTE: Please run this file directly from the FlexiAST directory as the imports are relative to the FlexiAST directory
-
-# TODO: Right now I do nothing about the overflow/underflow of the patch when it does not perfectly tile the spectrogram.
-# TODO: At the moment, we assume that there is only one cls token. Later on, we can extend to multiple or none cls tokens
-# TODO: Think about the underlying patch and positional embedding argument. For the weight loading, is it better if we do not have such params?
-
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -274,11 +268,10 @@ class FlexiASTModel(nn.Module):
         verbose=True,
         resize_func=resample_patch_embed
     ):
-        # TODO: Rethink about the parameters of flexiast model!!
-        # TODO: Consider the changes you have made in timm, and make the necessary changes here too
+
 
         super(FlexiASTModel, self).__init__()
-        # TODO: Specify the version of the timm being used here (in the old code, they were specifying it)
+        assert timm.__version__ == '0.8.6.dev0', 'Please use timm == 0.8.6.dev0 or similar version, the code might not be compatible with older versions.'
 
         if verbose == True:
             print('---------------FlexiAST Model Summary---------------')

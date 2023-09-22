@@ -22,7 +22,6 @@ import numpy as np
 import copy
 from traintest import train, validate
 from utilities.resizing_helper import vanilla_resample_patch_embed, resample_patch_embed,resize_weights
-# from utilities.distill_helper import resize_weights
 
 print("I am process %s, running on %s: starting (%s)" % (os.getpid(), os.uname()[1], time.asctime()))
 
@@ -112,32 +111,6 @@ torch.manual_seed(seed)
 if torch.cuda.is_available(): torch.cuda.manual_seed_all(seed)
 print('random seed: ', seed)
 
-# if args.dataset == 'audioset':
-#     if len(train_loader.dataset) > 2e5:
-#         print('scheduler for full audioset is used')
-#         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [2,3,4,5], gamma=0.5, last_epoch=-1)
-#     else:
-#         print('scheduler for balanced audioset is used')
-#         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [10, 15, 20, 25], gamma=0.5, last_epoch=-1)
-#     main_metrics = 'mAP'
-#     loss_fn = nn.BCEWithLogitsLoss()
-#     warmup = True
-# elif args.dataset == 'esc50':
-#     print('scheduler for esc-50 is used')
-#     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, list(range(5,26)), gamma=0.85)
-#     main_metrics = 'acc'
-#     loss_fn = nn.CrossEntropyLoss()
-#     warmup = False
-# elif args.dataset == 'speechcommands':
-#     print('scheduler for speech commands is used')
-#     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, list(range(5,26)), gamma=0.85)
-#     main_metrics = 'acc'
-#     loss_fn = nn.BCEWithLogitsLoss()
-#     warmup = False
-# else:
-#     raise ValueError('unknown dataset, dataset should be in [audioset, speechcommands, esc50]')
-#
-
 args = parser.parse_args()
 args.patch_sizes = [int(x) for x in args.patch_sizes.split(",")]
 
@@ -145,16 +118,8 @@ if args.wandb:
     import wandb
     wandb.init(project="interspeech23", entity="kmmai", name=args.exp_name,dir=args.wandb_dir)
 
-# transformer based model
 if args.model == 'ast':
     print('now train a audio spectrogram transformer model',args.model_type)
-
-    # 11/30/22: I decouple the dataset and the following hyper-parameters to make it easier to adapt to new datasets
-    # dataset spectrogram mean and std, used to normalize the input
-    # norm_stats = {'audioset':[-4.2677393, 4.5689974], 'esc50':[-6.6268077, 5.358466], 'speechcommands':[-6.845978, 5.5654526]}
-    # target_length = {'audioset':1024, 'esc50':512, 'speechcommands':128}
-    # # if add noise for data augmentation, only use for speech commands
-    # noise = {'audioset': False, 'esc50': False, 'speechcommands':True}
 
     audio_conf = {'num_mel_bins': 128, 'target_length': args.audio_length, 'freqm': args.freqm, 'timem': args.timem, 'mixup': args.mixup, 
                   'dataset': args.dataset, 'mode': 'train', 'mean': args.dataset_mean, 'std': args.dataset_std,'noise': args.noise,"skip_norm":args.skip_norm}
@@ -182,25 +147,11 @@ if args.model == 'ast':
     audio_model = models.ASTModel(label_dim=args.n_class, fstride=args.fstride, tstride=args.tstride, input_fdim=128,
                                   input_tdim=args.audio_length, imagenet_pretrain=args.imagenet_pretrain,
                                   model_size=args.model_type,patch_size=args.patch_size)
-    # audio_model = torch.nn.DataParallel(audio_model)
-    # torch.save(audio_model.state_dict(),"%s/empty.pth" % (args.exp_dir))
-    # exit()
+
     if args.ast_FT_dir is not None:
         #load a pretained model without mlp classifier
         print("====Start loading===")
         state_dict = torch.load(args.ast_FT_dir)
-        # if "SSAST" in args.ast_FT_dir:
-        #     myast_keys = []
-        #     for k in audio_model.state_dict().keys():
-        #         myast_keys.append("module."+k)
-        #     state_dict = change_dict_for_SSAST(state_dict,myast_keys,args)
-        #     out_dict = {}
-        #     for k, v in state_dict.items(): # Adjust the name of dict
-        #         if "mlp_head" in k:
-        #             continue
-        #         out_dict[k[7:]] = v
-        #     outcome = audio_model.load_state_dict(out_dict,strict=False)
-        # else:
         out_dict = {}
         resized_weights = resize_weights(copy.deepcopy(state_dict),args.t_patch_size,args.patch_size,
                                             args.resize_methods,args.t_audio_length,args.audio_length) # should transform teacher's params for student to load
@@ -211,7 +162,6 @@ if args.model == 'ast':
                 continue
             out_dict[k[7:]] = v
         audio_model.load_state_dict(out_dict,strict=False)
-        # print(outcome)
         print("====Finish loading===")
 
 if args.model == 'flexiast':
@@ -267,31 +217,5 @@ with open("%s/args.pkl" % args.exp_dir, "wb") as f:
 print('Now starting training for {:d} epochs'.format(args.n_epochs))
 train(audio_model, train_loader, val_loader, args)
 
-# for speechcommands dataset, evaluate the best model on validation set on the test set
-if args.dataset == 'speechcommands':
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    sd = torch.load(args.exp_dir + '/models/best_audio_model.pth', map_location=device)
-    audio_model = torch.nn.DataParallel(audio_model)
-    audio_model.load_state_dict(sd)
 
-    # best model on the validation set
-    stats, _ = validate(audio_model, val_loader, args, 'valid_set')
-    # note it is NOT mean of class-wise accuracy
-    val_acc = stats[0]['acc']
-    val_mAUC = np.mean([stat['auc'] for stat in stats])
-    print('---------------evaluate on the validation set---------------')
-    print("Accuracy: {:.6f}".format(val_acc))
-    print("AUC: {:.6f}".format(val_mAUC))
-
-    # test the model on the evaluation set
-    eval_loader = torch.utils.data.DataLoader(
-        dataloader.AudiosetDataset(args.data_eval, label_csv=args.label_csv, audio_conf=val_audio_conf),
-        batch_size=args.batch_size*2, shuffle=False, num_workers=args.num_workers, pin_memory=True)
-    stats, _ = validate(audio_model, eval_loader, args, 'eval_set')
-    eval_acc = stats[0]['acc']
-    eval_mAUC = np.mean([stat['auc'] for stat in stats])
-    print('---------------evaluate on the test set---------------')
-    print("Accuracy: {:.6f}".format(eval_acc))
-    print("AUC: {:.6f}".format(eval_mAUC))
-    np.savetxt(args.exp_dir + '/eval_result.csv', [val_acc, val_mAUC, eval_acc, eval_mAUC])
 
