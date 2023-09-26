@@ -150,17 +150,6 @@ def train(audio_model, train_loader, test_loader, args):
                 early_print_step = epoch == 0 and global_step % (args.n_print_steps/10) == 0
                 print_step = print_step or early_print_step
 
-                # if print_step and global_step != 0:
-                #     print('Epoch: [{0}][{1}/{2}]\t'
-                #     'Per Sample Total Time {per_sample_time.avg:.5f}\t'
-                #     'Per Sample Data Time {per_sample_data_time.avg:.5f}\t'
-                #     'Per Sample DNN Time {per_sample_dnn_time.avg:.5f}\t'
-                #     'Train Loss {loss_meter.avg:.4f}\t'.format(
-                #     epoch, i, len(train_loader), per_sample_time=per_sample_time, per_sample_data_time=per_sample_data_time,
-                #         per_sample_dnn_time=per_sample_dnn_time, loss_meter=loss_meter), flush=True)
-                #     if np.isnan(loss_meter.avg):
-                #         print("training diverged...")
-                #         return
                 bar_dict = {"Epoch":epoch,"T_Loss":loss_meter.avg}
                 tepoch.set_postfix(bar_dict)
                 end_time = time.time()

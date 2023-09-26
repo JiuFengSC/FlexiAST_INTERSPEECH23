@@ -271,7 +271,7 @@ class FlexiASTModel(nn.Module):
 
 
         super(FlexiASTModel, self).__init__()
-        assert timm.__version__ == '0.8.6.dev0', 'Please use timm == 0.8.6.dev0 or similar version, the code might not be compatible with older versions.'
+        assert timm.__version__ == '0.8.6dev0', 'Please use timm == 0.8.6.dev0 or similar version, the code might not be compatible with older versions.'
 
         if verbose == True:
             print('---------------FlexiAST Model Summary---------------')

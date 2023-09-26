@@ -43,12 +43,8 @@ parser.add_argument("--dataset", type=str, required=True)
 parser.add_argument("--num_class", type=int, required=True,help="number of class")
 parser.add_argument("--epoch", type=int, default=1,help="number of class")
 parser.add_argument("--patch_size", type=int, default=8,help="number of class")
-parser.add_argument("--t_patch_size", type=int, default=8,help="number of class")
 parser.add_argument("--note", type=str, default="",help="number of class")
 parser.add_argument("--audio_length", type=int, default=1024,help="length of spectrogram")
-parser.add_argument("--model_type", type=str, default="224", help="type of model", choices=["224", "origin"])
-
-
 
 
 
@@ -77,7 +73,8 @@ def validate(audio_model, val_loader, loss_fn, patch):
                 audio_input = audio_input.to(device)
 
                 # compute output
-                audio_output = audio_model(audio_input,patch)
+                patch_tuple = to_2tuple([16,patch])
+                audio_output = audio_model(audio_input,patch_tuple)
                 audio_output = torch.sigmoid(audio_output)
                 predictions = audio_output.to('cpu').detach()
 
@@ -101,31 +98,29 @@ def validate(audio_model, val_loader, loss_fn, patch):
 
 
 
+# patch_size = 8
 
 audio_model = models.FlexiASTModel(
     label_dim=args.num_class, input_size=(128, args.audio_length), orig_patch_size=(16,16),
-    orig_posemb_size=(128 // 16, args.audio_length // 16), patch_sizes=16,
+    orig_posemb_size=(128 // 16, args.audio_length // 16),patch_sizes=[48,40,32,30,24,20,16,15,12,10,8],
     ast_pretrain=True, ast_params = dict(
-        label_dim=args.num_class, fstride=args.t_patch_size, tstride=args.t_patch_size, input_fdim=128,
+        label_dim=args.num_class, fstride=args.patch_size, tstride=args.patch_size, input_fdim=128,
         input_tdim=args.audio_length, imagenet_pretrain=True,
-        audioset_pretrain=False, model_size=args.model_type, patch_size=args.t_patch_size
+        audioset_pretrain=False, model_size="224", patch_size=args.patch_size
     ),
-    model_path=None,load_backbone_only=False, precompute_patch_embed=False, verbose=False
+    model_path=None,load_backbone_only=False, precompute_patch_embed=False, verbose=False,only_time=True
 )
 state_dict = torch.load(args.model_dir)
 out_dict = {}
 for k, v in state_dict.items(): # Adjust the name of dict
     if "v.patch_embed" in k or "v.pos_embed" in k:
-        continue # Only for measuring flexibility, skip these two layers and load unstrictly is recommended. Otherwise, you need to make sure the args.t_patch_size is the same as the model teacher model.
+            continue # Only for measuring flexibility, skip these two layers and load unstrictly is recommended. Otherwise, you need to make sure the args.t_patch_size is the same as the model teacher model.
     out_dict[k[7:]] = v
 audio_model.load_state_dict(out_dict,strict=False)
 
-
-audio_model.v.patch_embed = None
-audio_model.v.pos_embed = None
-
-
+# new_patch_list = [6,8,9,10,12,13,15,16,20,22,24,25,30,32,40,48]
 new_patch_list = [8,10,12,16,20,24,30,32,40,48]
+# new_patch_list = [7]
 
 
 mAP_list = []
@@ -155,10 +150,10 @@ for patch in new_patch_list:
     elif args.dataset == "vggsound":
         val_conf = {'num_mel_bins': 128, 'target_length': 1024,
         'freqm': 0, 'timem': 0, 'mixup': 0,
-        'dataset': "vggsound", 'mode': 'evaluation', 'mean': -5.0767093,
-        'std': 4.4533687, 'noise': False, "skip_norm": False}
+        'dataset': "vggsound", 'mode': 'evaluation', 'mean': -4.2821145,
+        'std': 4.521023, 'noise': False, "skip_norm": False}
         val_loader = torch.utils.data.DataLoader(
-            dataloader.AudiosetDataset("/home/jfeng/FJ/FlexiAST/egs/vggsound/data/datafiles/vgg_final_test.json",
+            dataloader.AudiosetDataset("../vggsound/data/datafiles/vggsd_test_data.json",
             label_csv="../vggsound/data/class_labels_indices.csv",
             audio_conf=val_conf),
             batch_size=batch_size, shuffle=False,
@@ -169,8 +164,8 @@ for patch in new_patch_list:
         'dataset': "voxceleb", 'mode': 'evaluation', 'mean': -3.7614744,
         'std': 4.2011642, 'noise': False, "skip_norm": False}
         val_loader = torch.utils.data.DataLoader(
-            dataloader.AudiosetDataset("../voxceleb/data/datafile/test_data.json",
-            label_csv="../voxceleb/data/class_labels_indices.csv",
+            dataloader.AudiosetDataset("/home/jfeng/FJ/FlexiAST/egs/voxceleb/data/datafile/test_data.json",
+            label_csv="/home/jfeng/FJ/FlexiAST/egs/voxceleb/data/class_labels_indices.csv",
             audio_conf=val_conf),
             batch_size=batch_size, shuffle=False,
             num_workers=32, pin_memory=True)
@@ -222,8 +217,10 @@ for patch in new_patch_list:
 
 print(mAP_list)
 print(acc_list)
+# print(AUC_list)
 
-with open(f'{args.note}flex_{args.dataset}_{args.epoch}.csv', 'w') as f:
+
+with open(f'{args.note}flex_{args.dataset}_{args.epoch}-re.csv', 'w') as f:
     for i in range(len(new_patch_list)):
         string1 = str(new_patch_list[i])+", "+str(mAP_list[i])+", "+str(acc_list[i])+"\n"
         f.write(string1)

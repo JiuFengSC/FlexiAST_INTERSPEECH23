@@ -55,7 +55,7 @@ class ASTModel(nn.Module):
     def __init__(self, label_dim=527, fstride=10, tstride=10, input_fdim=128, input_tdim=1024, imagenet_pretrain=True, audioset_pretrain=False, model_size='224',patch_size=16, verbose=True):
 
         super(ASTModel, self).__init__()
-        assert timm.__version__ == '0.8.6.dev0', 'Please use timm == 0.8.6.dev0 or similar version, the code might not be compatible with older versions.'
+        assert timm.__version__ == '0.8.6dev0', 'Please use timm == 0.8.6.dev0 or similar version, the code might not be compatible with older versions.'
         if verbose == True:
             print('---------------AST Model Summary---------------')
             print('ImageNet pretraining: {:s}, AudioSet pretraining: {:s}'.format(str(imagenet_pretrain),str(audioset_pretrain)))
