@@ -10,11 +10,11 @@ The objective of this work is to give **patch-size flexibility** to Audio Spectr
 </div>
 
 ## Released models
-(Coming Soon!)
+All the checkpoints are available by Onedrive. If the links below are expired, please contact the authors.
 
-1. AudioSet_DeiT384_Flexified
-2. VGGSound_ViT224_Flexified
-3. VoxCeleb_ViT224_OnlyTime_Flexified
+1. [AudioSet_DeiT384_Flexified](https://1drv.ms/u/s!AtNFLJkyZiNRgYQ2e_TKF3VQuVcAbg?e=JjdTSp)
+2. [VGGSound_ViT224_Flexified](https://1drv.ms/u/s!AtNFLJkyZiNRgYQ4uUK79OCh0RJAvQ?e=I2njoh)
+3. [VoxCeleb_ViT224_OnlyTime_Flexified](https://1drv.ms/u/s!AtNFLJkyZiNRgYQ3fUyrewDAikQr5A?e=cER9r3)
 
 
 ## How to train
