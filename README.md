@@ -10,11 +10,11 @@ The objective of this work is to give **patch-size flexibility** to Audio Spectr
 </div>
 
 ## Released models
-All the checkpoints are available by Onedrive. If the links below are expired, please contact the authors.
+All the checkpoints are available by Google Drive. If the links below are expired, please contact the authors.
 
-1. [AudioSet_DeiT384_Flexified](https://1drv.ms/u/s!AtNFLJkyZiNRgYQ2e_TKF3VQuVcAbg?e=JjdTSp)
-2. [VGGSound_ViT224_Flexified](https://1drv.ms/u/s!AtNFLJkyZiNRgYQ4uUK79OCh0RJAvQ?e=I2njoh)
-3. [VoxCeleb_ViT224_OnlyTime_Flexified](https://1drv.ms/u/s!AtNFLJkyZiNRgYQ3fUyrewDAikQr5A?e=cER9r3)
+1. [AudioSet_DeiT384_Flexified](https://drive.google.com/file/d/1pT5zDYUeGIxBRT-u9ux6ponOrCtNg47G/view?usp=sharing)
+2. [VGGSound_ViT224_Flexified](https://drive.google.com/file/d/13OoeCRR_cEpY7Uf05VD7eJC49JL5kJzk/view?usp=sharing)
+3. [VoxCeleb_ViT224_OnlyTime_Flexified](https://drive.google.com/file/d/1w6Ty71Hk2GzS5To2cqnhwcUfIwl4Me7k/view?usp=sharing)
 
 
 ## How to train
@@ -26,3 +26,14 @@ The `*,sh` files in the `egs/{dataset}/` are the configs for training the baseli
 It is recommended to use the weights from pretrained baseline models as the initialization when flexifying the model. The configs in  `/egs/supvs_flexiast` are prepared for this, which both support supervised flexification (released already) and knowledge flexification (coming soon).
 
 After getting the flexible model, we can use the `measure_flexibility.py` for evaluating the flexibility.
+
+## Citation
+Please cite our paper if you find this repository useful. 
+```
+@inproceedings{feng2024flexiast,
+  author={Feng, Jiu and Erol, Mehmet Hamza and Chung, Joon Son and Senocak, Arda},
+  title={FlexiAST: Flexibility is What AST Needs},
+  year=2023,
+  booktitle={Proc. Interspeech 2023},
+}
+```
